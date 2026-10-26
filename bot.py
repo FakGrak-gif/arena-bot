@@ -5,7 +5,7 @@ import time
 import re
 import os
 
-# --- ВСТАВЬ СВОИ ДАННЫЕ СЮДА ---
+# --- ВСТАВЬ СВОИ ДАННЫЕ СЮДА --- 
 DISCORD_TOKEN = "MTU2Mzk3MDE5OTM2MTk0NTc1MQ.GSSHlu.4ejUMQTYB5bs_yDs9wLHSyXiobH-JrLwOEROR8"
 POLLINATIONS_KEY = "sk_Hm0rVyHlZktpjZ6FDrHFq2K0XBGCdOh5"
 AGENT_ID = "community/FakGrak-gif/arena-bot" 
