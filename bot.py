@@ -10,12 +10,6 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 POLLINATIONS_KEY = os.getenv("POLLINATIONS_KEY")
 AGENT_ID = "community/FakGrak-gif/arena-bot" 
 
-# --- ID КАНАЛОВ (ВПИШИ СВОИ!) ---
-CHANNEL_ID_1 = 1563607580406710473 # Обычное казино
-CHANNEL_ID_2 = 1564183939495624764 # VIP казино
-ARENA_CHANNEL_ID = 1564187640805458002 # Канал для Арены
-WORK_CHANNEL_ID = 1564224730217582623 # Канал для работы
-
 client = OpenAI(
     base_url="https://gen.pollinations.ai/v1",
     api_key=POLLINATIONS_KEY,
@@ -355,18 +349,13 @@ async def on_message(message):
     clean_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
     clean_lower = clean_text.lower()
 
-    # --- ДЕБАГ КОМАНДА (ПОКАЖЕТ ID КАНАЛА) ---
-    if clean_lower == "!ид":
-        await message.reply(f"ID этого канала: `{message.channel.id}`")
-        return
-
     if clean_lower == "!хелп":
         help_text = (
             "📖 **Справка по командам**\n\n"
             "⚔️ **Арена:**\n"
             "`@Fbot СБРОС` — начать игру.\n\n"
             "💼 **Работа:**\n"
-            "В канале работы напиши `!` чтобы заработать доллары.\n"
+            "Напиши `!` чтобы заработать доллары.\n"
             "`!обмен` — открыть меню обмена долларов на монеты.\n\n"
             "🛒 **Магазин:**\n"
             "`!магазин` — кнопки для покупки.\n\n"
@@ -393,8 +382,8 @@ async def on_message(message):
         await message.reply(text, view=ExchangeView())
         return
 
-    # --- РАБОТА (ТОЛЬКО В КАНАЛЕ РАБОТЫ) ---
-    if message.channel.id == WORK_CHANNEL_ID and clean_text == "!":
+    # --- РАБОТА (ВЕЗДЕ) ---
+    if clean_text == "!":
         current_time = time.time()
         last_time = work_cooldowns.get(message.author.id, 0)
         
@@ -432,24 +421,12 @@ async def on_message(message):
         await message.reply(f"{msg}\n*(Текущий баланс: {final_dollars}$)*")
         return
 
-    # --- КАЗИНО (ТОЛЬКО В КАНАЛАХ КАЗИНО) ---
-    if clean_text.startswith("!") and message.channel.id in [CHANNEL_ID_1, CHANNEL_ID_2]:
+    # --- КАЗИНО (ВЕЗДЕ, НО НЕ МЕШАЕТ ДРУГИМ КОМАНДАМ) ---
+    if clean_text.startswith("!") and not clean_text in ["!", "!обмен", "!магазин", "!топ", "!хелп"] and not clean_text.startswith("!обмен"):
         match = re.match(r'^!(?:ставка\s*)?(\d+)?$', clean_lower)
         if match:
             bet_str = match.group(1)
             bet = int(bet_str) if bet_str else 1
-            is_vip = False
-            if message.channel.id == CHANNEL_ID_1:
-                if bet < 1 or bet > 50:
-                    await message.reply("❌ В этом канале ставка от **1** до **50** монет!")
-                    return
-            elif message.channel.id == CHANNEL_ID_2:
-                if bet < 10 or bet > 1000:
-                    await message.reply("❌ В VIP-казино ставка от **10** до **1000** монет!")
-                    return
-                is_vip = True
-            else:
-                return
             
             current_coins = get_balance(message.author, "💰")
             if current_coins < bet:
@@ -467,29 +444,15 @@ async def on_message(message):
                 jackpot_win = casino_jackpot
                 casino_jackpot = 0
                 
-                if is_vip:
-                    win_amount = max(1, int(bet * 3.0))
-                    total_win = win_amount + jackpot_win
-                    win_coins = new_coins + bet + total_win
-                    msg = f"🏆 **ДЖЕКПОТ!** {slot_text}\nВы сорвали куш — +{win_amount} монет (x3 от ставки) и **+{jackpot_win} монет из банка**!\n*(Баланс: {win_coins})*"
-                else:
-                    win_coins = new_coins + bet + 20 + jackpot_win
-                    msg = f"🏆 **ДЖЕКПОТ!** {slot_text}\nВы сорвали куш — +20 монет и **+{jackpot_win} монет из банка**!\n*(Баланс: {win_coins})*"
-                
+                win_coins = new_coins + bet + 20 + jackpot_win
+                msg = f"🏆 **ДЖЕКПОТ!** {slot_text}\nВы сорвали куш — +20 монет и **+{jackpot_win} монет из банка**!\n*(Баланс: {win_coins})*"
                 await update_role(message.author, "💰", win_coins)
             
             elif roll <= 20:
                 digit = random.choice([1, 2, 3, 4, 5, 6, 8, 9])
                 slot_text = f"{emoji_map[digit]} {emoji_map[digit]} {emoji_map[digit]}"
-                
-                if is_vip:
-                    win_amount = max(1, int(bet * 1.0))
-                    win_coins = new_coins + bet + win_amount
-                    msg = f"💰 Три в ряд! {slot_text}\nВы получили +{win_amount} монет!\n*(Баланс: {win_coins})*\n*(Джекпот казино: {casino_jackpot})*"
-                else:
-                    win_coins = new_coins + bet + 5
-                    msg = f"💰 Три в ряд! {slot_text}\nВы получили +5 монет!\n*(Баланс: {win_coins})*\n*(Джекпот казино: {casino_jackpot})*"
-                
+                win_coins = new_coins + bet + 5
+                msg = f"💰 Три в ряд! {slot_text}\nВы получили +5 монет!\n*(Баланс: {win_coins})*\n*(Джекпот казино: {casino_jackpot})*"
                 await update_role(message.author, "💰", win_coins)
                 casino_jackpot += 1
             
@@ -498,15 +461,8 @@ async def on_message(message):
                 d2 = random.randint(1, 5)
                 if d1 == d2: d2 = d2 % 5 + 1
                 slot_text = f"{emoji_map[d1]} {emoji_map[d1]} {emoji_map[d2]}"
-                
-                if is_vip:
-                    win_amount = max(1, int(bet * 0.4))
-                    win_coins = new_coins + bet + win_amount
-                    msg = f"🎉 Две в ряд! {slot_text}\nВы выиграли +{win_amount} монет!\n*(Баланс: {win_coins})*\n*(Джекпот казино: {casino_jackpot})*"
-                else:
-                    win_coins = new_coins + bet + 2
-                    msg = f"🎉 Две в ряд! {slot_text}\nВы выиграли +2 монеты!\n*(Баланс: {win_coins})*\n*(Джекпот казино: {casino_jackpot})*"
-                
+                win_coins = new_coins + bet + 2
+                msg = f"🎉 Две в ряд! {slot_text}\nВы выиграли +2 монеты!\n*(Баланс: {win_coins})*\n*(Джекпот казино: {casino_jackpot})*"
                 await update_role(message.author, "💰", win_coins)
                 casino_jackpot += 1
             
@@ -558,4 +514,18 @@ async def on_message(message):
         top_text += "\n💵 **Топ по долларам:**\n"
         if players_dollars:
             for i, (name, amount) in enumerate(players_dollars[:10], 1):
-                top_text += f"{i}. **{name}
+                top_text += f"{i}. **{name}** — {amount}$\n"
+        else:
+            top_text += "*Пока ни у кого нет долларов.*\n"
+            
+        await message.reply(top_text)
+        return
+
+    # --- АРЕНА (ВЕЗДЕ) ---
+    if (bot.user.mentioned_in(message) or any(word in clean_lower for word in ["сброс", "старт", "начать"])):
+        if any(word in clean_lower for word in ["сброс", "старт", "начать"]):
+            await message.reply("Начинаем! Выбери свою расу:", view=RaceView())
+        else:
+            await process_arena_action(message.channel, message.author, clean_text, force_message=True)
+
+bot.run(DISCORD_TOKEN)
