@@ -5,18 +5,16 @@ import time
 import re
 import os
 
-# --- ВСТАВЬ СВОИ ДАННЫЕ СЮДА ---
-DISCORD_TOKEN = "MTU2Mzk3MDE5OTM2MTk0NTc1MQ.GSSHlu.4ejUMQTYB5bs_yDs9wLHSyXiobH-JrLwOEROR8"
-POLLINATIONS_KEY = "sk_Hm0rVyHlZktpjZ6FDrHFq2K0XBGCdOh5"
+# --- НАСТРОЙКИ (Токены берутся из FadeHost) ---
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+POLLINATIONS_KEY = os.getenv("POLLINATIONS_KEY")
 AGENT_ID = "community/FakGrak-gif/arena-bot" 
 
-# --- НИЖЕ НИЧЕГО МЕНЯТЬ НЕ НУЖНО ---
-
-# --- ID КАНАЛОВ ---
-CHANNEL_ID_1 = 1563607580406710473 # Обычное казино
-CHANNEL_ID_2 = 1564183939495624764 # VIP казино
-ARENA_CHANNEL_ID = 1564187640805458002 # Канал для Арены
-WORK_CHANNEL_ID = 1564224730217582623 # Канал для работы
+# --- ID КАНАЛОВ (ВПИШИ СВОИ РЕАЛЬНЫЕ ID) ---
+CHANNEL_ID_1 = 123456789012345678 # Обычное казино
+CHANNEL_ID_2 = 987654321098765432 # VIP казино
+ARENA_CHANNEL_ID = 112233445566778899 # Канал для Арены
+WORK_CHANNEL_ID = 998877665544332211 # Канал для работы
 
 client = OpenAI(
     base_url="https://gen.pollinations.ai/v1",
@@ -357,48 +355,6 @@ async def on_message(message):
     clean_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
     clean_lower = clean_text.lower()
 
-    # --- ТАБЛИЦА ЛИДЕРОВ ---
-    if clean_lower == "!топ":
-        # Собираем всех участников сервера, у кого есть роли с валютами
-        players_coins = []
-        players_dollars = []
-        
-        for member in message.guild.members:
-            if member.bot:
-                continue
-                
-            coins = get_balance(member, "💰")
-            if coins > 0:
-                players_coins.append((member.display_name, coins))
-                
-            dollars = get_balance(member, "💵")
-            if dollars > 0:
-                players_dollars.append((member.display_name, dollars))
-        
-        # Сортируем по убыванию
-        players_coins.sort(key=lambda x: x[1], reverse=True)
-        players_dollars.sort(key=lambda x: x[1], reverse=True)
-        
-        # Формируем текст
-        top_text = "🏆 **ТАБЛИЦА ЛИДЕРОВ** 🏆\n\n"
-        
-        top_text += "💰 **Топ по монетам:**\n"
-        if players_coins:
-            for i, (name, amount) in enumerate(players_coins[:10], 1):
-                top_text += f"{i}. **{name}** — {amount} монет\n"
-        else:
-            top_text += "*Пока ни у кого нет монет.*\n"
-            
-        top_text += "\n💵 **Топ по долларам:**\n"
-        if players_dollars:
-            for i, (name, amount) in enumerate(players_dollars[:10], 1):
-                top_text += f"{i}. **{name}** — {amount}$\n"
-        else:
-            top_text += "*Пока ни у кого нет долларов.*\n"
-            
-        await message.reply(top_text)
-        return
-
     if clean_lower == "!хелп":
         help_text = (
             "📖 **Справка по командам**\n\n"
@@ -562,6 +518,44 @@ async def on_message(message):
             
             await message.reply(msg)
             return
+
+    if clean_lower == "!топ":
+        players_coins = []
+        players_dollars = []
+        
+        for member in message.guild.members:
+            if member.bot:
+                continue
+                
+            coins = get_balance(member, "💰")
+            if coins > 0:
+                players_coins.append((member.display_name, coins))
+                
+            dollars = get_balance(member, "💵")
+            if dollars > 0:
+                players_dollars.append((member.display_name, dollars))
+        
+        players_coins.sort(key=lambda x: x[1], reverse=True)
+        players_dollars.sort(key=lambda x: x[1], reverse=True)
+        
+        top_text = "🏆 **ТАБЛИЦА ЛИДЕРОВ** 🏆\n\n"
+        
+        top_text += "💰 **Топ по монетам:**\n"
+        if players_coins:
+            for i, (name, amount) in enumerate(players_coins[:10], 1):
+                top_text += f"{i}. **{name}** — {amount} монет\n"
+        else:
+            top_text += "*Пока ни у кого нет монет.*\n"
+            
+        top_text += "\n💵 **Топ по долларам:**\n"
+        if players_dollars:
+            for i, (name, amount) in enumerate(players_dollars[:10], 1):
+                top_text += f"{i}. **{name}** — {amount}$\n"
+        else:
+            top_text += "*Пока ни у кого нет долларов.*\n"
+            
+        await message.reply(top_text)
+        return
 
     if message.channel.id == ARENA_CHANNEL_ID and (bot.user.mentioned_in(message) or any(word in clean_lower for word in ["сброс", "старт", "начать"])):
         if any(word in clean_lower for word in ["сброс", "старт", "начать"]):
