@@ -349,6 +349,9 @@ async def on_message(message):
     clean_text = message.content.replace(f'<@{bot.user.id}>', '').strip()
     clean_lower = clean_text.lower()
 
+    # --- ОТЛАДОЧНЫЙ PRINT ---
+    print(f"ПОЛУЧЕНО: '{clean_text}' В КАНАЛЕ: {message.channel.id}")
+
     if clean_lower == "!хелп":
         help_text = (
             "📖 **Справка по командам**\n\n"
