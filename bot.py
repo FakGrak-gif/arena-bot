@@ -13,10 +13,10 @@ AGENT_ID = "community/FakGrak-gif/arena-bot"
 # --- НИЖЕ НИЧЕГО МЕНЯТЬ НЕ НУЖНО ---
 
 # --- ID КАНАЛОВ ---
-CHANNEL_ID_1 = 123456789012345678 # Обычное казино
-CHANNEL_ID_2 = 987654321098765432 # VIP казино
-ARENA_CHANNEL_ID = 112233445566778899 # Канал для Арены
-WORK_CHANNEL_ID = 998877665544332211 # Канал для работы
+CHANNEL_ID_1 = 1563607580406710473 # Обычное казино
+CHANNEL_ID_2 = 1564183939495624764 # VIP казино
+ARENA_CHANNEL_ID = 1564187640805458002 # Канал для Арены
+WORK_CHANNEL_ID = 1564224730217582623 # Канал для работы
 
 client = OpenAI(
     base_url="https://gen.pollinations.ai/v1",
